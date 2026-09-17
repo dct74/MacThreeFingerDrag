@@ -1,10 +1,10 @@
 {
-    "version": "1.0",
+    "version": "1.0.1",
     "description": "Three-finger drag for Windows Precision Touchpads (macOS style). 无界面、仅系统托盘的托盘小工具。",
     "homepage": "https://github.com/dct74/MacThreeFingerDrag",
     "license": "MIT",
-    "url": "https://github.com/dct74/MacThreeFingerDrag/releases/download/v1.0/MacThreeFingerDrag.exe",
-    "hash": "e9310e3ae0600e13b69e496ac057f0b5ee7201dbb3ee5e9317cf36cbc1a3bb03",
+    "url": "https://github.com/dct74/MacThreeFingerDrag/releases/download/v1.0.1/MacThreeFingerDrag.exe",
+    "hash": "2fc179b61bdc64965e055363b0de3c1174f999f21dd9c7ddd26e5cd9435a9f2a",
     "bin": "MacThreeFingerDrag.exe",
     "shortcuts": [
         [
