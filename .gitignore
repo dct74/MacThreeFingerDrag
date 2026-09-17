@@ -1,0 +1,13 @@
+# 构建产物
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+
+# 发布/临时
+publish/
+*.pdb
+*.log
+tray-crop.png

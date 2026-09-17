@@ -1,0 +1,6 @@
+* text=auto
+
+# 二进制资源，禁止换行符转换
+*.ico binary
+*.png binary
+*.exe binary

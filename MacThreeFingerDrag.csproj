@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>Mftd</RootNamespace>
+    <AssemblyName>MacThreeFingerDrag</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>assets\icon.ico</ApplicationIcon>
+    <Platforms>x64;ARM64</Platforms>
+
+    <!-- v1.0 版本信息（写入 exe 资源，资源管理器可见） -->
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>MacThreeFingerDrag</Product>
+    <Title>MacThreeFingerDrag</Title>
+    <AssemblyTitle>Windows 三指拖动（无界面，仅托盘）</AssemblyTitle>
+    <Company>dct74</Company>
+    <Copyright>MIT License</Copyright>
+    <Description>在 Windows 上复刻 macOS 三指拖动（无界面，仅系统托盘）</Description>
+    <PackageProjectUrl>https://github.com/dct74/MacThreeFingerDrag</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dct74/MacThreeFingerDrag</RepositoryUrl>
+    <PackageTags>touchpad;trackpad;three-finger-drag;macos;windows;tray;win32</PackageTags>
+
+    <!-- 单文件原生 exe，无运行时依赖 -->
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <StripSymbols>true</StripSymbols>
+    <OptimizationPreference>Speed</OptimizationPreference>
+    <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- tools/ 下是独立的实测探针工具（有自己的 csproj），不能递归编进主程序 -->
+    <Compile Remove="tools\**" />
+    <None Remove="tools\**" />
+    <EmbeddedResource Remove="tools\**" />
+    <Page Remove="tools\**" />
+  </ItemGroup>
+
+</Project>
