@@ -11,3 +11,7 @@ publish/
 *.pdb
 *.log
 tray-crop.png
+
+# 全局 gitignore 里有 `*.manifest`，会静默排除掉这个必需的应用清单
+# （仓库级 .gitignore 的否定规则优先级高于全局 excludesFile）
+!app.manifest
