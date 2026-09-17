@@ -1,17 +1,20 @@
 # 保持 bucket/macthreefingerdrag.json 与本仓库最新 Release 同步，
 # 这样 `scoop install macthreefingerdrag` 拿到的永远是当前版本。
 #
-# 触发方式：
-#   * release published —— 正常路径。release 由用户/PAT 创建，所以事件不会被
-#     GITHUB_TOKEN 的防递归规则吞掉。
-#   * 每日定时兜底 —— 万一某次 Release 没触发到，第二天也会被纠正；
-#     顺便确保 Release 里有 <exe>.sha256（manifest 的 autoupdate.hash 依赖它）。
-#   * 手动 dispatch —— 可指定 tag，便于补历史版本。
+# 三种调用方式（同一份实现，避免重复代码）：
+#   * workflow_call  —— 由 build.yml 在发版后调用（正常路径，秒级同步）
+#   * schedule       —— 每日兜底：万一某次 Release 没同步到，第二天纠正；
+#                       顺便确保 Release 里有 <exe>.sha256（manifest 的 autoupdate.hash 依赖它）
+#   * workflow_dispatch —— 手动补历史版本
 name: Scoop manifest
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: '要同步的 release tag（如 v1.0.1）。留空则取最新 release。'
+        required: false
+        type: string
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
@@ -39,14 +42,20 @@ jobs:
       - name: Sync bucket/macthreefingerdrag.json
         shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
 
-          $tag = "${{ github.event.release.tag_name }}"
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "${{ inputs.tag }}" }
+          $tag = "${{ inputs.tag }}"
           if ([string]::IsNullOrWhiteSpace($tag)) { $tag = (gh release view --json tagName -q .tagName).Trim() }
           if ($tag -notmatch '^v\d') { throw "unexpected release tag: '$tag'" }
+
+          # 预发布（如 v1.1.0-rc1）不进 bucket：scoop 用户拿到的应该是正式版
+          if ($tag -match '-') {
+            Write-Host "pre-release tag '$tag' - the bucket keeps the latest stable release"
+            exit 0
+          }
+
           $version = $tag.Substring(1)
           Write-Host "target release: $tag (version $version)"
 
@@ -65,8 +74,10 @@ jobs:
 
           # 只替换顶层的 version / url / hash 三行，保持文件格式与 autoupdate 模板原样
           # （注意：必须用 Regex 实例的 Replace(input, replacement, count) 重载；
-          #  静态 [regex]::Replace($s,$p,$r,1) 的第 4 个参数是 RegexOptions，会变成"忽略大小写且全部替换"）
+          #  静态 [regex]::Replace($s,$p,$r,1) 的第 4 个参数是 RegexOptions，会变成"忽略大小写且全部替换"，
+          #  那会把 autoupdate.url 里的 $version 模板也写死，从而废掉以后的自动更新）
           $path = 'bucket/macthreefingerdrag.json'
+          if (-not (Test-Path $path)) { throw "$path is missing" }
           $json = Get-Content -Raw $path
           $json = ([regex]'(?m)^(\s*"version":\s*")[^"]*(")').Replace($json, "`${1}$version`${2}", 1)
           $json = ([regex]'(?m)^(\s*"url":\s*")[^"]*(")').Replace($json,     "`${1}$url`${2}", 1)
@@ -77,7 +88,7 @@ jobs:
           if ($check.version -ne $version) { throw "version not written: $($check.version)" }
           if ($check.hash -ne $hash)       { throw "hash not written: $($check.hash)" }
           if ($check.autoupdate.url -notmatch '\$version') { throw 'autoupdate.url lost its $version placeholder' }
-          Write-Host "manifest ok: version=$($check.version) hash=$($check.hash.Substring(0,12))..."
+          Write-Host "manifest ok: version=$($check.version) hash=$($check.hash.Substring(0, 12))..."
 
           git config user.name  'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
