@@ -1,0 +1,39 @@
+{
+    "version": "1.0",
+    "description": "Three-finger drag for Windows Precision Touchpads (macOS style). 无界面、仅系统托盘的托盘小工具。",
+    "homepage": "https://github.com/dct74/MacThreeFingerDrag",
+    "license": "MIT",
+    "url": "https://github.com/dct74/MacThreeFingerDrag/releases/download/v1.0/MacThreeFingerDrag.exe",
+    "hash": "e9310e3ae0600e13b69e496ac057f0b5ee7201dbb3ee5e9317cf36cbc1a3bb03",
+    "bin": "MacThreeFingerDrag.exe",
+    "shortcuts": [
+        [
+            "MacThreeFingerDrag.exe",
+            "MacThreeFingerDrag"
+        ]
+    ],
+    "pre_uninstall": [
+        "Remove-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'MacThreeFingerDrag' -ErrorAction SilentlyContinue"
+    ],
+    "notes": [
+        "MacThreeFingerDrag 已在托盘运行（无主界面）。",
+        "",
+        "首次使用前必须关闭 Windows 自带的三指手势，否则系统会先截获手势：",
+        "  设置 → 蓝牙和其他设备 → 触控板 → 三指手势（滑动/点按）都设为「无」，",
+        "  或直接在托盘菜单里执行「修复 Windows 三指手势设置」（可能需要注销一次）。",
+        "",
+        "三根手指放在触控板上移动即可拖动窗口 / 选中文本；三指点按不会产生点击；",
+        "抬手后 300ms 内放回手指可继续同一个拖动。",
+        "",
+        "Requires a Windows Precision Touchpad (Windows 10+). No UI, no network, no telemetry."
+    ],
+    "checkver": {
+        "github": "https://github.com/dct74/MacThreeFingerDrag"
+    },
+    "autoupdate": {
+        "url": "https://github.com/dct74/MacThreeFingerDrag/releases/download/v$version/MacThreeFingerDrag.exe",
+        "hash": {
+            "url": "$url.sha256"
+        }
+    }
+}

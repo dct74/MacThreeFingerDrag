@@ -14,6 +14,20 @@
 `TipSwitch` 与 `ContactCount` 有 0.5% 帧不一致、相对注入会被系统指针加速放大 1.94× 等等。
 完整分析见 **[docs/DESIGN.zh-CN.md](docs/DESIGN.zh-CN.md)**，实测工具见 **[tools/probe](tools/probe)**。
 
+## 用 Scoop 安装（推荐）
+
+本仓库自带 `bucket/` 目录，可直接作为 Scoop bucket 使用：
+
+```powershell
+scoop bucket add MacThreeFingerDrag https://github.com/dct74/MacThreeFingerDrag
+scoop install MacThreeFingerDrag/macthreefingerdrag
+```
+
+安装后命令行可用 `macthreefingerdrag` 启动，开始菜单也会有入口；卸载时会自动清理开机自启项。
+
+> 维护者注意：每次发版需在 Release 里一并附上 `<exe>.sha256` 校验文件
+> （manifest 的 `autoupdate.hash` 依赖它），否则 `scoop update` 无法自动跟随新版本。
+
 ## 快速开始
 
 1. 下载 [Releases](https://github.com/dct74/MacThreeFingerDrag/releases) 里的 `MacThreeFingerDrag.exe`，放到任意目录双击运行（只有托盘图标，不会弹窗）。
@@ -34,7 +48,6 @@
 * 日志：`%APPDATA%\MacThreeFingerDrag\MacThreeFingerDrag.log`（追加写 + 2 MB 轮转）
 
 ## 构建
-
 ```powershell
 # 开发构建
 dotnet build
