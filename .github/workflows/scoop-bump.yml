@@ -1,0 +1,87 @@
+# 保持 bucket/macthreefingerdrag.json 与本仓库最新 Release 同步，
+# 这样 `scoop install macthreefingerdrag` 拿到的永远是当前版本。
+#
+# 触发方式：
+#   * release published —— 正常路径。release 由用户/PAT 创建，所以事件不会被
+#     GITHUB_TOKEN 的防递归规则吞掉。
+#   * 每日定时兜底 —— 万一某次 Release 没触发到，第二天也会被纠正；
+#     顺便确保 Release 里有 <exe>.sha256（manifest 的 autoupdate.hash 依赖它）。
+#   * 手动 dispatch —— 可指定 tag，便于补历史版本。
+name: Scoop manifest
+
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要同步的 release tag（如 v1.0.1）。留空则取最新 release。'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scoop-manifest
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: windows-latest
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Sync bucket/macthreefingerdrag.json
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $tag = "${{ github.event.release.tag_name }}"
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "${{ inputs.tag }}" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = (gh release view --json tagName -q .tagName).Trim() }
+          if ($tag -notmatch '^v\d') { throw "unexpected release tag: '$tag'" }
+          $version = $tag.Substring(1)
+          Write-Host "target release: $tag (version $version)"
+
+          $asset = 'MacThreeFingerDrag.exe'
+          $url = "https://github.com/${{ github.repository }}/releases/download/$tag/$asset"
+
+          $file = Join-Path $env:RUNNER_TEMP $asset
+          Invoke-WebRequest -Uri $url -OutFile $file
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host "sha256: $hash"
+
+          # manifest 的 autoupdate.hash 读的是 <exe>.sha256，所以让 Release 始终带着它
+          $checksum = Join-Path $env:RUNNER_TEMP "$asset.sha256"
+          "$hash  $asset" | Set-Content -Path $checksum -Encoding ascii
+          gh release upload $tag $checksum --clobber
+
+          # 只替换顶层的 version / url / hash 三行，保持文件格式与 autoupdate 模板原样
+          # （注意：必须用 Regex 实例的 Replace(input, replacement, count) 重载；
+          #  静态 [regex]::Replace($s,$p,$r,1) 的第 4 个参数是 RegexOptions，会变成"忽略大小写且全部替换"）
+          $path = 'bucket/macthreefingerdrag.json'
+          $json = Get-Content -Raw $path
+          $json = ([regex]'(?m)^(\s*"version":\s*")[^"]*(")').Replace($json, "`${1}$version`${2}", 1)
+          $json = ([regex]'(?m)^(\s*"url":\s*")[^"]*(")').Replace($json,     "`${1}$url`${2}", 1)
+          $json = ([regex]'(?m)^(\s*"hash":\s*")[^"]*(")').Replace($json,    "`${1}$hash`${2}", 1)
+          Set-Content -Path $path -Value $json -NoNewline
+
+          $check = Get-Content -Raw $path | ConvertFrom-Json
+          if ($check.version -ne $version) { throw "version not written: $($check.version)" }
+          if ($check.hash -ne $hash)       { throw "hash not written: $($check.hash)" }
+          if ($check.autoupdate.url -notmatch '\$version') { throw 'autoupdate.url lost its $version placeholder' }
+          Write-Host "manifest ok: version=$($check.version) hash=$($check.hash.Substring(0,12))..."
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add $path
+          if (git diff --cached --quiet) { Write-Host 'manifest already up to date'; exit 0 }
+          git commit -m "scoop: $asset $version"
+          git push
