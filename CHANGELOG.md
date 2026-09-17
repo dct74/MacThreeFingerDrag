@@ -1,5 +1,28 @@
 # Changelog
 
+## v1.0.1 — 修复仓库缺失 app.manifest + 发版流程自动化（2026-09-17）
+
+### 修复
+
+* **`app.manifest` 此前从未进入版本库**，被全局 `.gitignore_global` 里的 `*.manifest` 规则**静默排除**
+  （`git add -A` 一直跳过它）。CI 构建时才暴露为 `CSC error CS1926: Could not find app.manifest`。
+  现已恢复该文件（PerMonitorV2 DPI 感知 + asInvoker 非提权），并在仓库 `.gitignore` 里加了
+  `!app.manifest` 否定规则（仓库级优先级高于全局 excludesFile）。
+  > v1.0 的 tag 树缺少该文件，**无法从该 tag 重建**；v1.0.1 起可完整复现。
+
+### 工程
+
+* 新增 `build.yml`：推送 `v*` tag 即自动完成 —— .NET 8 NativeAOT 构建 → 启动冒烟测试 →
+  按模板渲染发布说明 → 发布 Release（附 `exe` 与 `<exe>.sha256`）；main/PR 只做构建校验
+* Scoop manifest 同步抽成可复用 workflow `sync-scoop.yml`（发版后调用 + 每日兜底 + 手动触发），
+  预发布 tag 不改动 bucket（bucket 始终指向最新正式版）
+* 新增 `.github/release-notes.md` 模板：占位符未替换就让 job 失败，杜绝“校验和过期的发布”
+* 新增 `bucket/macthreefingerdrag.json` 与 Scoop 安装说明（`scoop install macthreefingerdrag`）
+
+### 行为
+
+* 与 v1.0 功能完全相同，无行为变更
+
 ## v1.0.0 — 首个正式版本（2026-09-17）
 
 在 MacBook Pro 2019（Boot Camp / Windows 11 build 26200 / Apple USB Precision Trackpad）上开发并实测通过。
