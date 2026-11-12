@@ -1,11 +1,14 @@
 # 保持 bucket/macthreefingerdrag.json 与本仓库最新 Release 同步，
 # 这样 `scoop install macthreefingerdrag` 拿到的永远是当前版本。
 #
-# 三种调用方式（同一份实现，避免重复代码）：
-#   * workflow_call  —— 由 build.yml 在发版后调用（正常路径，秒级同步）
-#   * schedule       —— 每日兜底：万一某次 Release 没同步到，第二天纠正；
-#                       顺便确保 Release 里有 <exe>.sha256（manifest 的 autoupdate.hash 依赖它）
+# 两种调用方式（同一份实现，避免重复代码）：
+#   * workflow_call  —— 由 build.yml 在发版后调用（唯一正常路径，秒级同步）
 #   * workflow_dispatch —— 手动补历史版本
+#
+# 曾经还有 schedule 每日兜底，已删除：GitHub 会在公开仓库 60 天无活动后自动禁用
+# scheduled workflow，留着只会周期性收到 "will be disabled soon" 邮件；而发版路径
+# 由 tag push 触发，本来就不会漏，且 build.yml 已随 Release 上传 <exe>.sha256
+# （manifest 的 autoupdate.hash 依赖它）。
 name: Scoop manifest
 
 on:
@@ -15,8 +18,6 @@ on:
         description: '要同步的 release tag（如 v1.0.1）。留空则取最新 release。'
         required: false
         type: string
-  schedule:
-    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
       tag:
